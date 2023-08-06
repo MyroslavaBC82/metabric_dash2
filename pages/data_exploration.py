@@ -26,12 +26,11 @@ cache = diskcache.Cache("./cache")
 CACHE_DURATION = 180
 
 dash.register_page(__name__, path='/', suppress_callback_exceptions=True)
-data = pd.read_csv("METABRIC_RNA_Mutation.csv")
-# file_path = '/home/MyroslavaBC82/metabric_dash/METABRIC_RNA_Mutation3.csv'
-# data = pd.read_csv(file_path)
+data = pd.read_csv("METABRIC_RNA_Mutation3.csv", nrows=250)
 available_variables = list(data.columns)
 # Extract the numerical variables for correlation
 numerical_data = data.select_dtypes(include='number')
+
 EPSILON = 1e-9 
 
 def linear_layout_algorithm(data, iterations=1000, learning_rate=0.1, Vmax=5, Smax=10):
@@ -46,7 +45,7 @@ def linear_layout_algorithm(data, iterations=1000, learning_rate=0.1, Vmax=5, Sm
         neighbor_sets = []
         for i in range(N):
             distances = np.linalg.norm(data - data[i], axis=1)
-            indices = np.argsort(distances)[1:Vmax+1]  # Exclude self
+            indices = np.argsort(distances)[1:Vmax+1]  
             neighbor_sets.append(indices)
 
         # Update positions and velocities
@@ -117,7 +116,7 @@ layout = html.Div(children=[
                                 html.Th('Number of Outliers (4 σ)'),
                             ])
                         ),
-                        html.Tbody(id='statistics-table-body'),  # Include the statistics-table-body here
+                        html.Tbody(id='statistics-table-body'),  
                     ]),
                 ],
             ),
@@ -127,7 +126,6 @@ layout = html.Div(children=[
 
     html.Div(className='row', children=[
         html.Div(className='six columns', style={'padding': '10px', 'border': '1px solid #ccc', 'border-radius': '5px', 'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.1)'}, children=[
-            # html.H3('Correlation Heatmap'),
             dcc.Graph(id='correlation-heatmap'),
         ]),
 
@@ -153,7 +151,7 @@ layout = html.Div(children=[
                                 html.Th('Diagram'),
                             ])
                         ),
-                        html.Tbody(id='correlation-table-body'),  # Include the correlation-table-body here
+                        html.Tbody(id='correlation-table-body'),  # Include the correlation-table-body 
                     ]),
                 ],
             ),
@@ -199,6 +197,7 @@ layout = html.Div(children=[
                 value=numerical_data.columns[12],  # Set default value
             ),
             html.Div(style={'margin-top': '20px'}),
+            html.Button("Show All Data", id="show-all-data-button"),
 
             html.Div(style={'display': 'inline'}, children=[  # Add this inline style to the button container
                 html.Div(style={'margin': '20px'}),
@@ -541,7 +540,6 @@ layout = html.Div(children=[
             "font-family": "Arial, sans-serif",
             "margin": "2px",
             "padding": "2px",
-            # "background-color": "#F5F5F5",
         },
     ),
 
@@ -555,14 +553,14 @@ layout = html.Div(children=[
 )
 def update_correlation_heatmap(selected_variable):
     # Calculate the correlation matrix between all numerical variables
-    correlation_matrix = numerical_data.corr()
+    correlation_matrix = numerical_data.iloc[:,:503].corr()
 
     # Create the heatmap
     fig = go.Figure(data=go.Heatmap(
         z=correlation_matrix.values,
         x=correlation_matrix.columns,
         y=correlation_matrix.columns,
-        colorscale='RdBu',  # You can choose any colorscale you prefer
+        colorscale='RdBu',  
         zmin=-1,
         zmax=1,
         colorbar=dict(title='Correlation'),
@@ -624,7 +622,40 @@ def update_correlation_table(selected_variable):
     # If no variable is selected, return an empty table
     return []
 
-
+# Define a dictionary of variable descriptions
+variable_descriptions = {
+    'patient_id': 'Unique identifier for each patient',
+    'age_at_diagnosis': 'Age of the patient at diagnosis time',
+    'type_of_breast_surgery': 'Breast cancer surgery type: 1- MASTECTOMY, which refers to a surgery to remove all breast tissue from a breast as a way to treat or prevent breast cancer. 2- BREAST CONSERVING, which refers to a urgery where only the part of the breast that has cancer is removed',
+    'cancer_type': 'Breast cancer types: 1- Breast Cancer or 2- Breast Sarcoma', 
+    'cancer_type_detailed': 'Detailed Breast cancer types: 1- Breast Invasive Ductal Carcinoma 2- Breast Mixed Ductal and Lobular Carcinoma 3- Breast Invasive Lobular Carcinoma 4- Breast Invasive Mixed Mucinous Carcinoma 5- Metaplastic Breast Cancer', 
+    'cellularity': 'Cancer cellularity post chemotherapy, which refers to the amount of tumor cells in the specimen and their arrangement into clusters', 
+    'chemotherapy': 'Whether or not the patient had chemotherapy as a treatment (yes/no)', 
+    'pam50_+_claudin-low_subtype': 'Pam 50: is a tumor profiling test that helps show whether some estrogen receptor-positive (ER-positive), HER2-negative breast cancers are likely to metastasize (when breast cancer spreads to other organs). The claudin-low breast cancer subtype is defined by gene expression characteristics, most prominently: Low expression of cell–cell adhesion genes, high expression of epithelial–mesenchymal transition (EMT) genes, and stem cell-like/less differentiated gene expression patterns', 
+    'cohort': 'Cohort is a group of subjects who share a defining characteristic (It takes a value from 1 to 5)', 
+    'er_status_measured_by_ihc': 'To assess if estrogen receptors are expressed on cancer cells by using immune-histochemistry (a dye used in pathology that targets specific antigen, if it is there, it will give a color, it is not there, the tissue on the slide will be colored) (positive/negative)', 
+    'er_status': 'Cancer cells are positive or negative for estrogen receptors', 
+    'neoplasm_histologic_grade': 'Determined by pathology by looking the nature of the cells, do they look aggressive or not (It takes a value from 1 to 3)', 
+    'her2_status_measured_by_snp6': 'To assess if the cancer positive for HER2 or not by using advance molecular techniques (Type of next generation sequencing)', 
+    'her2_status': 'Whether the cancer is positive or negative for HER2', 
+    'tumor_other_histologic_subtype': "Type of the cancer based on microscopic examination of the cancer tissue (It takes a value of 'Ductal/NST', 'Mixed', 'Lobular', 'Tubular/ cribriform', 'Mucinous', 'Medullary', 'Other', 'Metaplastic' )", 
+    'hormone_therapy': 'Whether or not the patient had hormonal as a treatment (yes/no)', 
+    'inferred_menopausal_state': 'Whether the patient is is post menopausal or not (post/pre)', 
+    'integrative_cluster': "Molecular subtype of the cancer based on some gene expression (It takes a value from '4ER+', '3', '9', '7', '4ER-', '5', '8', '10', '1', '2', '6')", 
+    'primary_tumor_laterality': 'Whether it is involving the right breast or the left breast', 
+    'lymph_nodes_examined_positive': 'To take samples of the lymph node during the surgery and see if there were involved by the cancer', 
+    'mutation_count': 'Number of gene that has relevant mutations', 
+    'nottingham_prognostic_index': 'It is used to determine prognosis following surgery for breast cancer. Its value is calculated using three pathological criteria: the size of the tumour; the number of involved lymph nodes; and the grade of the tumour.', 
+    'oncotree_code': 'The OncoTree is an open-source ontology that was developed at Memorial Sloan Kettering Cancer Center (MSK) for standardizing cancer type diagnosis from a clinical perspective by assigning each diagnosis a unique OncoTree code.', 
+    'overall_survival_months': 'Duration from the time of the intervention to death', 
+    'overall_survival': 'Target variable wether the patient is alive of dead.', 
+    'pr_status': 'Cancer cells are positive or negative for progesterone receptors', 
+    'radio_therapy': 'Whether or not the patient had radio as a treatment (yes/no)', 
+    '3-gene_classifier_subtype': "Three Gene classifier subtype It takes a value from 'ER-/HER2-', 'ER+/HER2- High Prolif', nan, 'ER+/HER2- Low Prolif','HER2+'", 
+    'tumor_size': 'Tumor size measured by imaging techniques', 
+    'tumor_stage': 'Stage of the cancer based on the involvement of surrounding structures, lymph nodes and distant spread', 
+    'death_from_cancer': "Wether the patient's death was due to cancer or not", 
+}
 
 # Define a callback to update the statistics table
 @callback(
@@ -673,9 +704,11 @@ def update_statistics_table(selected_variable):
     if selected_variable:
         statistics = [row for row in statistics if row[0] == selected_variable]
 
-    # Generate the table rows for statistics
     table_rows = [
-        html.Tr([html.Td(stat) for stat in stat_row])
+        html.Tr(
+            title=variable_descriptions.get(stat_row[0], ''),  # Get the description from the dictionary
+            children=[html.Td(stat) for stat in stat_row]
+        )
         for stat_row in statistics
     ]
 
@@ -804,9 +837,6 @@ def generate_patient_info_table(patient_id):
     patient_info_rows.append(html.Tr([html.Td("Overall Survival Status"), html.Td(overall_survival_status)]))
 
     return patient_info_rows
-
-
-
 
 
 # Function to generate the pie chart of mutation_count
@@ -961,9 +991,9 @@ def update_parallel_coordinates(selected_show_variables, selected_rows, data_tab
     # Initialize the color column for all rows to 0 (unselected)
     plot_data["color"] = 0
 
-    # Highlight selected rows with 1
     if selected_rows:
-        selected_indices = [datatable.iloc[row].name for row in selected_rows]
+        valid_selected_indices = [row for row in selected_rows if row < len(datatable)]
+        selected_indices = [datatable.iloc[row].name for row in valid_selected_indices]
         plot_data.loc[selected_indices, "color"] = 1
 
     fig = go.Figure(data=go.Parcoords(
@@ -978,37 +1008,39 @@ def update_parallel_coordinates(selected_show_variables, selected_rows, data_tab
     ))
 
     if selected_rows:
-        selected_indices = [
-            datatable.iloc[row].name for row in selected_rows
+        valid_selected_indices = [row for row in selected_rows if row < len(datatable)]
+        selected_indices = [datatable.iloc[row].name for row in valid_selected_indices]
+        
+        # Ensure that the selected indices are in the datatable
+        valid_selected_indices = [
+            idx for idx in selected_indices if idx in datatable.index
         ]
+        
         fig.update_traces(
             line=dict(color="red"), selector={"line.color": "gray"}  # Highlight selected rows in red
         )
+
 
     return fig
 
 
 @callback(
     Output('data-table', 'data'),
-    Input('frequency-graph', 'clickData')
+    Input('frequency-graph', 'clickData'),
+    State('frequency-variable-dropdown', 'value'),
+    Input("show-all-data-button", "n_clicks")
 )
-def update_data_table(click_data):
-    if click_data:
-        # Extract the clicked point value from clickData
-        clicked_value = click_data["points"][0]["x"]
-        selected_variable = find_matching_variable(data, clicked_value)
-        # Filter the data DataFrame based on the clicked_value
-        updated_data = data[data[selected_variable] == clicked_value]
-        
-        # Convert the filtered DataFrame to a dictionary for the data table
-        updated_data_dict = updated_data.to_dict("records")
-        
-        return updated_data_dict
-    else:
-        # If click_data is None (i.e., no point clicked), return the original data
-        return data.to_dict("records")
+def update_data_table(clickData, var, n_clicks):
+    ctx = dash.callback_context
+    triggered_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
     
-
+    if triggered_id == "show-all-data-button.n_clicks":
+        return data.to_dict("records")
+    elif clickData:
+        clicked_value = clickData["points"][0]["x"]
+        return data[data[var] == clicked_value].to_dict("records")
+    else:
+        return data.to_dict("records")
 
 @callback(
     [Output('scatter-plot', 'figure'),
@@ -1147,13 +1179,23 @@ def update_plots(x_variable, y_variable, selected_variables, scatter_click_data,
     scatter_matrix_fig.update_layout(layout)
 
     if current_selected_rows_cluster_graph:
+        valid_selected_indices = [
+            row for row in current_selected_rows_cluster_graph if row < len(data_table_data)
+        ]
+        
         for trace in scatter_matrix_fig.data:
             if isinstance(trace, go.Scatter):
                 selected_indices = [
                     datatable[datatable["patient_id"].eq(data_table_data[row]["patient_id"])].index[0]
-                    for row in current_selected_rows_cluster_graph
+                    for row in valid_selected_indices if row < len(data_table_data)
                 ]
-                trace.selectedpoints = selected_indices
+                
+                # Ensure that the selected indices are in the datatable.index
+                valid_selected_indices = [
+                    idx for idx in selected_indices if idx in datatable.index
+                ]
+                
+                trace.selectedpoints = valid_selected_indices
                 trace.selected = dict(marker=dict(color="red", size=10))
             elif isinstance(trace, go.Bar):
                 trace.selected = dict(marker=dict(color="red"))
@@ -1184,12 +1226,23 @@ def update_plots(x_variable, y_variable, selected_variables, scatter_click_data,
     figure = go.Figure(data=[trace], layout=layout)
 
     if current_selected_rows_cluster_graph:
+        valid_selected_indices = [
+            row for row in current_selected_rows_cluster_graph if row < len(data_table_data)
+        ]
+        
         selected_indices = [
             datatable[datatable["patient_id"].eq(data_table_data[row]["patient_id"])].index[0]
-            for row in current_selected_rows_cluster_graph
+            for row in valid_selected_indices if row < len(data_table_data)
         ]
-        figure["data"][0]["selectedpoints"] = selected_indices
-        figure["data"][0]["selected"] = dict(marker=dict(color="red", size=10))
+        
+        # Ensure that the selected indices are in the datatable.index
+        valid_selected_indices = [
+            idx for idx in selected_indices if idx in datatable.index
+        ]
+        
+        if valid_selected_indices:
+            figure["data"][0]["selectedpoints"] = valid_selected_indices
+            figure["data"][0]["selected"] = dict(marker=dict(color="red", size=10))
 
 
     # Perform dimensionality reduction based on the selected method
@@ -1260,13 +1313,26 @@ def update_plots(x_variable, y_variable, selected_variables, scatter_click_data,
         cluster_fig.update_traces(marker=dict(color=df['color_variable']))  # Update marker color based on selected variable
 
     cluster_fig.update_layout(transition_duration=200, width=850, height=600)
+
     if current_selected_rows_cluster_graph:
+        valid_selected_indices = [
+            row for row in current_selected_rows_cluster_graph if row < len(data_table_data)
+        ]
+        
         selected_indices = [
             datatable[datatable["patient_id"].eq(data_table_data[row]["patient_id"])].index[0]
-            for row in current_selected_rows_cluster_graph
+            for row in valid_selected_indices if row < len(data_table_data)
         ]
-        cluster_fig["data"][0]["selectedpoints"] = selected_indices
-        cluster_fig["data"][0]["selected"] = dict(marker=dict(color="red", size=10))
+        
+        # Ensure that the selected indices are in the datatable.index
+        valid_selected_indices = [
+            idx for idx in selected_indices if idx in datatable.index
+        ]
+        
+        if valid_selected_indices:
+            cluster_fig["data"][0]["selectedpoints"] = valid_selected_indices
+            cluster_fig["data"][0]["selected"] = dict(marker=dict(color="red", size=10))
+
 
     # Cache the result
     cache_key = (
@@ -1290,4 +1356,3 @@ def update_plots(x_variable, y_variable, selected_variables, scatter_click_data,
     cache[cache_key] = (scatter_matrix_fig, cluster_fig, current_selected_rows_cluster_graph)
 
     return figure, scatter_matrix_fig, cluster_fig, current_selected_rows_cluster_graph
-
