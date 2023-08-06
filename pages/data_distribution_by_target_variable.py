@@ -7,9 +7,7 @@ import plotly.graph_objs as go
 import numpy as np
 
 dash.register_page(__name__)
-# file_path = '/home/MyroslavaBC82/metabric_dash/METABRIC_RNA_Mutation3.csv'
-# data = pd.read_csv(file_path)
-data = pd.read_csv("METABRIC_RNA_Mutation.csv")
+data = pd.read_csv("METABRIC_RNA_Mutation3.csv", nrows=250)
 available_variables = list(data.columns)
 
 # Boxplot for numerical variables from columns 2 to 31
@@ -146,9 +144,6 @@ def update_boxplot(selected_variable, selected_data_source, box_clickData, gene_
     return fig
 
 
-
-
-# Assuming 'data' is your DataFrame
 start_column_index = 520
 
 # Select the subset of columns from 'start_column_index' to the end
@@ -195,7 +190,7 @@ layout = html.Div(children=[
             {'label': 'Overall Survival', 'value': 'overall_survival'},
             {'label': 'Death from Cancer', 'value': 'death_from_cancer'}
         ],
-        value=default_data_source,  # Set the default data source here
+        value=default_data_source,  # Set the default data source 
         labelStyle={'display': 'block'}
     ),
 
@@ -214,4 +209,3 @@ layout = html.Div(children=[
     ])
 
 ])
-
