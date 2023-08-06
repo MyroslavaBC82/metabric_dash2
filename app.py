@@ -14,7 +14,6 @@ external_stylesheets = [
     {'href': 'https://fonts.googleapis.com/css2?family=Yeseva+One&display=swap', 'rel': 'stylesheet'},  # Yeseva One font
     {'type': 'text/css', 'style': custom_css},  # Custom CSS style for the app
 ]
-# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = Dash(__name__, use_pages=True, external_stylesheets=external_stylesheets)
 
 app.layout = html.Div([
@@ -41,16 +40,18 @@ app.layout = html.Div([
                     'margin-bottom': '0px',
                 },
             ),
-            html.P(
-                'The genetics part of the dataset contains m-RNA levels z-score for 331 genes, and mutation for 175 genes.',
-                style={
-                    'text-align': 'center',
-                    'margin-bottom': '30px',
-                    'background-color': '#003262',
-                    'color': 'white',
-                    'padding': '0px',
-                },
-            ),
+            html.P([
+                ' The Molecular Taxonomy of Breast Cancer International Consortium database is a Canada-UK Project which contains targeted sequencing data of 1,980 primary breast cancer samples. The ',
+                dcc.Link('dataset', href='https://www.kaggle.com/datasets/raghadalharbi/breast-cancer-gene-expression-profiles-metabric', target='_blank'),
+                ' was collected by Professor Carlos Caldas from Cambridge Research Institute and Professor Sam Aparicio from the British Columbia Cancer Centre in Canada and published on Nature Communications. There are 31 clinical attributes in the dataset. The genetics part contains m-RNA levels z-score for 331 genes, and mutation for 175 genes.'
+            ],
+            style={
+                'text-align': 'left',
+                'margin-bottom': '30px',
+                'background-color': '#003262',
+                'color': 'white',
+                'padding': '0px',
+            }),
         ],
         style={
             'background-color': '#003262',  # Apply background color to the entire top section
