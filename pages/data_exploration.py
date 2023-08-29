@@ -26,7 +26,7 @@ cache = diskcache.Cache("./cache")
 CACHE_DURATION = 180
 
 dash.register_page(__name__, path='/', suppress_callback_exceptions=True)
-data = pd.read_csv("METABRIC_RNA_Mutation3.csv", nrows=250)
+data = pd.read_csv("METABRIC_RNA_Mutation3.csv")
 available_variables = list(data.columns)
 # Extract the numerical variables for correlation
 numerical_data = data.select_dtypes(include='number')
@@ -95,7 +95,11 @@ layout = html.Div(children=[
 
             # Scrollable table container for statistics table
             html.Div(
-                style={'height': '400px', 'overflowY': 'scroll'},
+                style={'height': '400px', 'overflowY': 'scroll', 'border': '1px solid #ccc',  # Add a border to the scrollable div
+                        'borderRadius': '5px',      # Add border radius for a nicer look
+                        'boxShadow': '0px 0px 5px rgba(0, 0, 0, 0.1)',  # Add a subtle shadow
+                        'padding': '10px',          # Add some padding for spacing
+                        'background': '#fff',  },
                 children=[
                     html.Table(id='statistics-table', children=[
                         html.Thead(
@@ -114,7 +118,7 @@ layout = html.Div(children=[
                                 html.Th('Number of Outliers (2 σ)'),
                                 html.Th('Number of Outliers (3 σ)'),
                                 html.Th('Number of Outliers (4 σ)'),
-                            ])
+                            ]), style={'position': 'sticky', 'top': '0', 'background-color': '#f0f0f0'},
                         ),
                         html.Tbody(id='statistics-table-body'),  
                     ]),
@@ -203,9 +207,14 @@ layout = html.Div(children=[
                 html.Div(style={'margin': '20px'}),
                 # html.Button("Show All Data", id="show-all-data-button", n_clicks=0),
             ]),
-
-            # Scatter plot container
-            dcc.Graph(id='scatter-plot', selectedData=None),
+            html.Div(
+        dcc.Loading(
+            type="circle",
+            children=[
+                dcc.Graph(id='scatter-plot', selectedData=None),
+            ],
+        )
+    ),
         ]),
 
     ], style={'margin-bottom': '20px'}),
@@ -223,8 +232,15 @@ layout = html.Div(children=[
                 value=[numerical_data.columns[11], numerical_data.columns[12]],  # Set default value
                 multi=True,  # Allow multiple variable selection
             ),
-            # Scatter matrix container
-            dcc.Graph(id='scatter-matrix-plot', selectedData=None),
+
+            html.Div(
+                dcc.Loading(
+                    type="circle",
+                    children=[
+                        dcc.Graph(id='scatter-matrix-plot', selectedData=None),
+                    ],
+                )
+    ),
         ]),
     ], style={'margin-bottom': '20px'}),
 
@@ -247,12 +263,18 @@ layout = html.Div(children=[
                         children=[
                             html.Div(
                                 children=[
-                                      # Add loading to the graph
-                                    dcc.Graph(
+
+                                    html.Div(
+                                        dcc.Loading(
+                                            type="circle",
+                                            children=[
+                                                dcc.Graph(
                                         id="cluster-graph",
                                         hoverData={"points": [{"hovertemplate": ""}]},
                                     ),
-
+                                            ],
+                                        )
+                                    ),
                                 ]
                             ),
                         ],
@@ -279,7 +301,6 @@ layout = html.Div(children=[
                                         value="umap",
                                         style={
                                             "width": "150px",
-                                            "display": "inline-block",
                                         },
                                     ),
                                 ]
@@ -296,7 +317,6 @@ layout = html.Div(children=[
                                         step=1,
                                         style={
                                             "width": "100px",
-                                            "display": "inline-block",
                                             "opacity": 1,  # Full opacity by default
                                         },
                                     ),
@@ -337,7 +357,6 @@ layout = html.Div(children=[
                                         value="chemotherapy",
                                         style={
                                             "width": "150px",
-                                            "display": "inline-block",
                                         },
                                     ),
                                 ]
@@ -455,9 +474,14 @@ layout = html.Div(children=[
                             html.Div(
                                 children=[
                                     html.Label("Parallel Coordinates graph:"),
-                                
-                                    dcc.Graph(id="parallel-coordinates-graph"),
-                                    
+                                    html.Div(
+                                        dcc.Loading(
+                                            type="circle",
+                                            children=[
+                                                dcc.Graph(id="parallel-coordinates-graph"),
+                                            ],
+                                        )
+                                    ),                                    
                                 ]
                             ),
                         ],
@@ -492,8 +516,8 @@ layout = html.Div(children=[
                                     "row": 1,
                                     "column": 0,
                                 }, 
-                            ),
-                        ],
+                            ), 
+                        ], 
                     )
                 ],
             ),
@@ -526,12 +550,8 @@ layout = html.Div(children=[
 
     # Third row: Heatmap and barchart
     html.Div(className="row", children=[
-        
-        
-        html.Div(className="six columns", style={'padding': '10px', 'border': '1px solid #ccc', 'border-radius': '5px', 'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.1)', 'margin-right': '10px'}, children=[
-            dcc.Graph(id='mrna-heatmap'),
-        ]),
-        html.Div(className="six columns", style={'padding': '10px', 'border': '1px solid #ccc', 'border-radius': '5px', 'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.1)', 'margin-left': '10px'}, children=[
+
+        html.Div( style={'padding': '10px', 'border': '1px solid #ccc', 'border-radius': '5px', 'box-shadow': '2px 2px 5px rgba(0, 0, 0, 0.1)', 'margin-left': '10px'}, children=[
             dcc.Graph(id='gene-zscore-bar-chart'),
         ]),
     ]),
@@ -872,30 +892,6 @@ def generate_mutation_pie_chart(patient_id):
         )
     }
 
-# Function to generate the heatmap of mRNA levels for 331 genes
-def generate_mrna_heatmap(patient_id):
-    # Filter data for the selected patient ID
-    selected_patient_data = data[data['patient_id'] == patient_id]
-
-    # Select the mRNA levels for the 331 genes
-    mrna_data = selected_patient_data.iloc[:, 31:362].values
-
-    # Create the heatmap trace
-    heatmap_trace = go.Heatmap(
-        z=mrna_data,
-        x=data.columns[31:362],  # Gene names
-        y=['mRNA Levels'],
-        colorscale='Viridis'
-    )
-
-    return {
-        'data': [heatmap_trace],
-        'layout': go.Layout(
-            title=f'mRNA Levels Heatmap for Patient {patient_id}',
-            xaxis=dict(title='Genes'),
-            yaxis=dict(title=''),
-        )
-    }
 
 # Updated function to generate the gene z-score bar chart
 def generate_gene_zscore_bar_chart(patient_id):
@@ -940,7 +936,6 @@ def generate_gene_zscore_bar_chart(patient_id):
 # Callback to update all elements when the patient ID is changed
 @callback(
     [Output('patient-info-table', 'children'),
-     Output('mrna-heatmap', 'figure'),
      Output('spider-chart', 'figure'),
      Output('mutation-pie-chart', 'figure'),
      Output('gene-zscore-bar-chart', 'figure')],
@@ -957,20 +952,13 @@ def update_all_elements(active_cell, data):
     # Generate patient information table
     patient_info_table_rows = generate_patient_info_table(patient_id)
 
-    # Generate heatmap of mRNA levels
-    mrna_heatmap_figure = generate_mrna_heatmap(patient_id)
-
     # Generate spider chart
     spider_chart_figure = generate_spider_chart(patient_id)
-
-    # Generate pie chart of mutation_count
-    mutation_pie_chart_figure = generate_mutation_pie_chart(patient_id)
-
 
     # Generate gene z-score bar chart
     gene_zscore_bar_chart_figure = generate_gene_zscore_bar_chart(patient_id)
 
-    return patient_info_table_rows, mrna_heatmap_figure, spider_chart_figure, mutation_pie_chart_figure, gene_zscore_bar_chart_figure
+    return patient_info_table_rows, spider_chart_figure, gene_zscore_bar_chart_figure
 
 
 @callback(
