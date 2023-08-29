@@ -7,7 +7,7 @@ import plotly.graph_objs as go
 import numpy as np
 
 dash.register_page(__name__)
-data = pd.read_csv("METABRIC_RNA_Mutation3.csv", nrows=250)
+data = pd.read_csv("METABRIC_RNA_Mutation3.csv")
 available_variables = list(data.columns)
 
 # Boxplot for numerical variables from columns 2 to 31
@@ -42,7 +42,7 @@ def get_filtered_data(selected_data_source):
      Input('data-source-radio', 'value'),
      Input('boxplot', 'clickData'),
      Input('gene-mutation-distplot', 'clickData')],
-    [State('variable-dropdown', 'value')]  # Add State for dropdown value
+    [State('variable-dropdown', 'value')]  
 )
 def update_distplot(selected_variable, selected_data_source, box_clickData, gene_clickData, dropdown_value):
     # Check if a box in the boxplot is clicked and get the variable from the clicked box
@@ -176,6 +176,7 @@ layout = html.Div(children=[
         ])
     ]),
 
+    html.H2(children='Distribution graphs by target:'),
     html.Label('Select a variable from numerical_variables:'),
     dcc.Dropdown(
         id='variable-dropdown',
@@ -183,7 +184,7 @@ layout = html.Div(children=[
         value=default_variable  # Set the default variable here
     ),
 
-    html.Label('Select data source:'),
+    html.Label('Select target variable:'),
     dcc.RadioItems(
         id='data-source-radio',
         options=[
@@ -197,6 +198,7 @@ layout = html.Div(children=[
     html.Div(className='row', children=[
         dcc.Store(id='dropdown-value-store'),
         html.Div(className='six columns', style={'background-color': 'white', 'padding': '10px', 'box-shadow': '2px 2px 10px rgba(0, 0, 0, 0.2)'}, children=[
+            
             dcc.Graph(id='distplot', 
                       # Set the initial figure for the distplot with the default variable and data source
                       figure=update_distplot(default_variable, default_data_source, None, None, None))
